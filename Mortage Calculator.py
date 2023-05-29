@@ -1,53 +1,55 @@
-def calculate_mortgage(principal, interest_rate, years):
-    
-    # Calculate the monthly mortgage payment given the principal amount, annual interest rate, and loan term in years.
-    
-    monthly_interest_rate = interest_rate / 100 / 12
-    total_payments = years * 12
+import psutil
+import time
+import matplotlib.pyplot as plt
 
-    # Calculate the monthly mortgage payment
-    mortgage_payment = (principal * monthly_interest_rate) / (1 - (1 + monthly_interest_rate) ** -total_payments)
+def track_data_usage():
+    data_usage = []
+    timestamps = []
 
-    return mortgage_payment
+    # Initial network stats
+    initial_stats = psutil.net_io_counters()
+    start_time = time.time()
 
+    while True:
+        # Current network stats
+        current_stats = psutil.net_io_counters()
+        elapsed_time = time.time() - start_time
 
-def mortgage_schedule(principal, interest_rate, years):
-    
-    # Generate a mortgage payment schedule showing the monthly payment, interest paid, principal paid, and remaining balance.
-    
-    monthly_payment = calculate_mortgage(principal, interest_rate, years)
-    remaining_balance = principal
+        # Calculate data usage since the last check
+        upload = current_stats.bytes_sent - initial_stats.bytes_sent
+        download = current_stats.bytes_recv - initial_stats.bytes_recv
 
-    print("Mortgage Payment Schedule:")
-    print("--------------------------")
-    print("Month\tPayment\tInterest\tPrincipal\tBalance")
+        # Append data usage and timestamp to the lists
+        data_usage.append((upload, download))
+        timestamps.append(elapsed_time)
 
-    month = 1
-    while month <= years * 12:
-        interest = remaining_balance * interest_rate / 100 / 12
-        principal_payment = monthly_payment - interest
-        remaining_balance -= principal_payment
+        # Update initial statistics for the next iteration
+        initial_stats = current_stats
 
-        #Print mortgage schedule to two decimals places
-        print(str(month) + "\t" + format(monthly_payment, ".2f") + "\t" + format(interest, ".2f") + "\t\t" + format(principal_payment, ".2f") + "\t\t" + format(remaining_balance, ".2f"))
+        # Check if the user wants to stop tracking
+        stop_tracking = input("Press 'q' to stop tracking or any other key to continue: ")
+        if stop_tracking.lower() == 'q':
+            break
 
-        month += 1
-
-
-# Example usage
-principal = 100000
-interest_rate = 10
-years = 25
-
-monthly_payment = calculate_mortgage(principal, interest_rate, years)
-total_payment = monthly_payment * years * 12
-
-print("Principal amount: $" + str(principal))
-print("Interest rate: " + str(interest_rate) + "%")
-print("Loan term: " + str(years) + " years")
-print("Monthly mortgage payment: $" + format(monthly_payment, ".2f"))
-print("Total payment: $" + format(total_payment, ".2f"))
-
-mortgage_schedule(principal, interest_rate, years)
+    # Generate a graph showing the data usage over time
+    plot_graph(timestamps, data_usage)
 
 
+def plot_graph(timestamps, data_usage):
+    uploads = [upload for upload, _ in data_usage]
+    downloads = [download for _, download in data_usage]
+
+    plt.plot(timestamps, uploads, label='Uploads')
+    plt.plot(timestamps, downloads, label='Downloads')
+
+    plt.xlabel('Time (seconds)')
+    plt.ylabel('Data Usage (bytes)')
+    plt.title('Data Usage During Online Session')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+# Start tracking data usage
+track_data_usage()
+
+#Psutil function may not work if user does not have access to network data. 
